@@ -1,0 +1,12 @@
+{
+  "name": "@intern/api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "nitro dev",
+    "build": "nitro build"
+  },
+  "dependencies": {
+    "@intern/domain": "workspace:*"
+  }
+}

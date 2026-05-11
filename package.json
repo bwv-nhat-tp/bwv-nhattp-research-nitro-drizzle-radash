@@ -1,0 +1,26 @@
+{
+  "name": "bwv-nhattp-research-nitro-drizzle-radash",
+  "packageManager": "yarn@4.12.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "db:push": "yarn workspace @intern/domain db:push",
+    "db:seed": "yarn tsx packages/domain/src/seed.ts",
+    "dev:api": "yarn workspace @intern/api dev",
+    "dev": "yarn dev:api"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "mysql2": "^3.22.3",
+    "nitropack": "^2.13.4",
+    "radash": "^12.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.7.0"
+  }
+}
