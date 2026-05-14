@@ -1,16 +1,15 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "~/*": ["./*"],
-      "@intern/domain": ["../../packages/domain/src"]
+      "@intern/domain": ["../../packages/domain/src/index.ts"]
     },
     "types": ["node"]
   },
   "include": [
     "**/*",
     ".nitro/types/*.d.ts",
-    "../../packages/domain/src/**/*"
+    "../packages/domain/src/**/*"
   ]
 }

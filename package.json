@@ -6,10 +6,10 @@
     "packages/*"
   ],
   "scripts": {
-    "db:push": "yarn workspace @intern/domain db:push",
-    "db:seed": "yarn tsx packages/domain/src/seed.ts",
     "dev:api": "yarn workspace @intern/api dev",
-    "dev": "yarn dev:api"
+    "domain:gen": "yarn workspace @intern/domain db:gen",
+    "domain:push": "yarn workspace @intern/domain db:push",
+    "db:seed": "yarn workspace @intern/domain db:seed"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
