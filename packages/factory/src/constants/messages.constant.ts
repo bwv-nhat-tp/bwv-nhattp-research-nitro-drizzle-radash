@@ -1,7 +1,6 @@
 export const SUCCESS_MESSAGES = {
   REGISTER: 'Registered',
   LOGIN: 'Logged in',
-  REFRESH_TOKEN: 'Token refreshed',
   CHANGE_PASSWORD: 'Password changed',
   LOGOUT: 'Logged out',
   TRANSFER: 'Transfer completed',
@@ -17,7 +16,6 @@ export const ERROR_MESSAGES = {
   VALIDATION_ERROR: 'Validation failed',
   TOKEN_EXPIRED: 'Token has expired',
   TOKEN_INVALID: 'Invalid token',
-  REFRESH_TOKEN_NOT_FOUND: 'Refresh token missing',
   USER_NOT_FOUND: 'User not found',
   INSUFFICIENT_BALANCE: 'Insufficient balance',
   EMAIL_ALREADY_EXISTS: 'Email already exists',

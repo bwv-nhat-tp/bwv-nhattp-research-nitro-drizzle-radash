@@ -20,16 +20,12 @@ export const useAuthStore = defineStore('auth', () => {
     currentUser.value = authData.user;
     token.value = authData.accessToken;
     localStorage.setItem('accessToken', authData.accessToken);
-    if (authData.refreshToken) {
-      localStorage.setItem('refreshToken', authData.refreshToken);
-    }
   };
 
   const clearAuth = () => {
     currentUser.value = null;
     token.value = null;
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
   };
 
   const login = async (credentials: LoginDto) => {

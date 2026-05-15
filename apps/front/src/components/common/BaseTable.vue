@@ -46,7 +46,7 @@
   import DataTable, { type DataTablePageEvent } from 'primevue/datatable';
   import InputText from 'primevue/inputtext';
   import { FilterMatchMode } from 'primevue/api';
-  import debounce from 'lodash/debounce';
+  import { debounce } from 'radash';
 
   const props = defineProps<{
     data: T[];
@@ -75,12 +75,12 @@
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
 
-  const debouncedSearch = debounce((keyword: string) => {
+  const debouncedSearch = debounce({ delay: 500 }, (keyword: string) => {
     emit('search', keyword);
     if (!props.lazy) {
       filters.value.global.value = keyword as any;
     }
-  }, 500);
+  });
 
   const onSearch = (event: Event) => {
     const target = event.target as HTMLInputElement;

@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@intern/domain": "workspace:*",
-    "@intern/factory": "workspace:*"
+    "@intern/factory": "workspace:*",
+    "radash": "^12.1.1"
   }
 }

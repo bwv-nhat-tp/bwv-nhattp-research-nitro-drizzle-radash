@@ -54,6 +54,7 @@
   import { useNotifications } from '../composables/useNotifications';
   import { useLoadingStore } from '../stores/loadingStore';
   import type { ApiErrorResponse } from '../api/types';
+  import { select } from 'radash';
 
   const props = defineProps<{ users: UserFromApi[]; currentUserId: number }>();
   const emit = defineEmits(['success']);
@@ -62,9 +63,11 @@
   const loadingStore = useLoadingStore();
 
   const userOptions = computed(() =>
-    props.users
-      .filter(u => u.id !== props.currentUserId)
-      .map(u => ({ label: `${u.name} ($${Number(u.balance).toFixed(2)})`, value: u.id }))
+    select(
+      props.users,
+      u => ({ label: `${u.name} ($${Number(u.balance).toFixed(2)})`, value: u.id }),
+      u => u.id !== props.currentUserId
+    )
   );
 
   const { errors, handleSubmit, defineField, resetForm, meta } = useForm<TransferData>({

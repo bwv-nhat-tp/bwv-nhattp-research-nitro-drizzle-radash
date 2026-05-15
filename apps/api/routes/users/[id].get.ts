@@ -1,6 +1,7 @@
 import { defineEventHandler, getRouterParam, createError } from 'h3';
 import { UserRepository } from '@intern/domain';
 import { ERROR_MESSAGES, HttpStatus } from '@intern/factory';
+import { omit } from 'radash';
 
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'));
@@ -15,7 +16,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: HttpStatus.NOT_FOUND, statusMessage: ERROR_MESSAGES.USER_NOT_FOUND });
   }
 
-  const { password, refreshToken, ...safeUser } = user;
-  
-  return safeUser;
+  return omit(user, ['password']);
 });

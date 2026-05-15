@@ -21,10 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const hashedNewPassword = await bcrypt.hash(body.newPassword, 10);
 
-  await UserRepository.update(user.id, {
-    password: hashedNewPassword,
-    refreshToken: null,
-  });
+  await UserRepository.update(user.id, { password: hashedNewPassword });
 
   return { message: SUCCESS_MESSAGES.CHANGE_PASSWORD };
 });

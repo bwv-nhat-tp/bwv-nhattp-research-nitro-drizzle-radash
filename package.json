@@ -6,12 +6,11 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "yarn dev:api & yarn dev:front",
     "dev:api": "yarn workspace @intern/api dev",
     "dev:front": "yarn workspace @intern/front dev",
-    "domain:gen": "yarn workspace @intern/domain db:gen",
-    "domain:push": "yarn workspace @intern/domain db:push",
-    "db:seed": "yarn workspace @intern/domain db:seed",
-    "dev": "yarn dev:api & yarn dev:front"
+    "db:gen": "yarn workspace @intern/domain db:gen",
+    "db:migrate": "yarn workspace @intern/domain db:migrate"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

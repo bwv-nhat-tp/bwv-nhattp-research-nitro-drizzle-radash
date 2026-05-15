@@ -21,7 +21,6 @@ export interface AuthData {
     name: string;
   };
   accessToken: string;
-  refreshToken?: string;
 }
 
 export const authAPI = {

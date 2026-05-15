@@ -1,20 +1,23 @@
 import { ref, computed, type Ref } from 'vue';
-import filter from 'lodash/filter';
-import isNil from 'lodash/isNil';
+import { isNumber } from 'radash';
 
 export function useBalanceFilter<T extends { balance: number | string }>(dataList: Ref<T[]>) {
   const minBalance = ref<number | null>(null);
   const maxBalance = ref<number | null>(null);
 
   const filteredData = computed(() => {
-    if (isNil(minBalance.value) && isNil(maxBalance.value)) {
-      return dataList.value;
-    }
-    return filter(dataList.value, item => {
+    const min = minBalance.value;
+    const max = maxBalance.value;
+
+    if (!isNumber(min) && !isNumber(max)) return dataList.value;
+
+    return dataList.value.filter(item => {
       const bal = Number(item.balance);
-      const min = !isNil(minBalance.value) ? minBalance.value : -Infinity;
-      const max = !isNil(maxBalance.value) ? maxBalance.value : Infinity;
-      return bal >= min && bal <= max;
+      
+      const satisfiesMin = !isNumber(min) || bal >= min;
+      const satisfiesMax = !isNumber(max) || bal <= max;
+
+      return satisfiesMin && satisfiesMax;
     });
   });
 

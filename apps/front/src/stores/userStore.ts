@@ -4,6 +4,7 @@ import { userAPI } from '../api/userAPI';
 import { UserFromApi } from '@intern/factory';
 import { useLoadingStore } from './loadingStore';
 import type { ApiErrorResponse } from '../api/types';
+import { sum } from 'radash';
 
 export const useUserStore = defineStore('users', () => {
   const users = ref<UserFromApi[]>([]);
@@ -11,7 +12,7 @@ export const useUserStore = defineStore('users', () => {
   const loadingStore = useLoadingStore();
 
   const totalUsers = computed(() => users.value.length);
-  const totalBalance = computed(() => users.value.reduce((sum: number, u: UserFromApi) => sum + Number(u.balance), 0));
+  const totalBalance = computed(() => sum(users.value, u => Number(u.balance)));
 
   const fetchUsers = async () => {
     loadingStore.startLoading();

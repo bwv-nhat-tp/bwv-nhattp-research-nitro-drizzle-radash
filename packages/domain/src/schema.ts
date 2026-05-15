@@ -19,7 +19,6 @@ export const users = mysqlTable('users', {
   password: varchar('password', { length: 255 }).notNull(),
   balance: decimal('balance', { precision: 10, scale: 2 }).notNull().default('0'),
   nationality: mysqlEnum('nationality', nationalityValues).default(Nationality.US),
-  refreshToken: varchar('refresh_token', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 });
