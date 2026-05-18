@@ -9,6 +9,7 @@
   "dependencies": {
     "@intern/domain": "workspace:*",
     "@intern/factory": "workspace:*",
+    "nitropack": "^2.13.4",
     "radash": "^12.1.1"
   }
 }
