@@ -1,6 +1,5 @@
 <template>
   <div class="app-root">
-    <h1>User Management System</h1>
 
     <section class="list-section">
       <div class="header-row">
@@ -69,9 +68,8 @@
   });
   const isSaving = ref(false);
 
-  // Refresh cooldown state
   const refreshCooldown = ref(0);
-  const cooldownTimer = ref<NodeJS.Timeout | null>(null);
+  const cooldownTimer = ref<ReturnType<typeof setInterval> | null>(null);
 
   const isRefreshDisabled = computed(() => {
     return userStore.loading || refreshCooldown.value > 0;
@@ -99,7 +97,6 @@
   const handleRefresh = async () => {
     if (isRefreshDisabled.value) return;
 
-    // Clear any existing cooldown timer
     if (cooldownTimer.value) {
       clearInterval(cooldownTimer.value);
       cooldownTimer.value = null;

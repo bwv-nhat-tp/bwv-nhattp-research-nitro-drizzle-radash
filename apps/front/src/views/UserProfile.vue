@@ -117,7 +117,6 @@
     if (userStore.users.length === 0) userStore.fetchUsers();
   });
 
-  // Watch for route param changes to refetch user data when navigating between profiles
   watch(
     () => route.params.id,
     (newId, oldId) => {

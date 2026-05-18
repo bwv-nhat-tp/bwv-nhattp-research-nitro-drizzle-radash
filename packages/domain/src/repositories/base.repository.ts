@@ -1,33 +1,55 @@
-import { MySqlTable } from "drizzle-orm/mysql-core";
-import { eq } from "drizzle-orm";
+import { AnyPgColumn, AnyPgTable } from "drizzle-orm/pg-core";
+import { eq, SQL } from "drizzle-orm";
 import { db } from "../db";
 
-export class BaseRepository<T extends MySqlTable> {
-  constructor(protected table: T) {}
+type TableWithId = AnyPgTable & { id: AnyPgColumn };
 
-  async findAll() {
-    return db.select().from(this.table);
+export class BaseRepository<
+  TTable extends TableWithId,
+  TSelect,
+  TInsert extends Record<string, unknown>,
+> {
+  constructor(
+    protected table: TTable,
+    private idColumn: TTable['id'],
+  ) {}
+
+  async findAll(): Promise<TSelect[]> {
+    return db.select()
+      .from(this.table as never)
+      .then((rows) => rows as unknown as TSelect[]);
   }
 
-  async findById(id: number) {
-    const [result] = await db.select().from(this.table).where(eq((this.table as any).id, id));
-    return result || null;
+  async findById(id: number): Promise<TSelect | null> {
+    const [result] = await db.select()
+      .from(this.table as never)
+      .where(eq(this.idColumn, id));
+
+    return (result as TSelect | undefined) || null;
   }
 
-  async findOne(column: any, value: any) {
-    const [result] = await db.select().from(this.table).where(eq(column, value));
-    return result || null;
+  async findOne<TValue>(column: AnyPgColumn, value: TValue | SQL): Promise<TSelect | null> {
+    const [result] = await db.select()
+      .from(this.table as never)
+      .where(eq(column, value));
+
+    return (result as TSelect | undefined) || null;
   }
 
-  async create(data: any) {
-    return db.insert(this.table).values(data);
+  async create(data: TInsert): Promise<TSelect[]> {
+    return db.insert(this.table)
+      .values(data)
+      .returning()
+      .then((rows) => rows as unknown as TSelect[]);
   }
 
-  async update(id: number, data: any) {
-    return db.update(this.table).set(data).where(eq((this.table as any).id, id));
+  async update(id: number, data: Partial<TInsert>) {
+    return db.update(this.table)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(this.idColumn, id));
   }
 
   async delete(id: number) {
-    return db.delete(this.table).where(eq((this.table as any).id, id));
+    return db.delete(this.table).where(eq(this.idColumn, id));
   }
 }

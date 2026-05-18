@@ -1,37 +1,40 @@
 import { 
-  mysqlTable, 
+  pgEnum,
+  pgTable, 
   varchar, 
   timestamp, 
   decimal, 
-  mysqlEnum, 
-  int,
+  integer,
+  serial,
   index
-} from 'drizzle-orm/mysql-core';
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { Nationality } from '@intern/factory';
 
 const nationalityValues = Object.values(Nationality) as [string, ...string[]];
+export const nationalityEnum = pgEnum('nationality', nationalityValues);
+export const transferStatusEnum = pgEnum('transfer_status', ['success', 'pending', 'failed']);
 
-export const users = mysqlTable('users', {
-  id: int('id').autoincrement().primaryKey(),
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: varchar('name', { length: 255 }).notNull(),
   password: varchar('password', { length: 255 }).notNull(),
   balance: decimal('balance', { precision: 10, scale: 2 }).notNull().default('0'),
-  nationality: mysqlEnum('nationality', nationalityValues).default(Nationality.US),
+  nationality: nationalityEnum('nationality').default(Nationality.US),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const transferLogs = mysqlTable('transfer_logs', {
-  id: int('id').autoincrement().primaryKey(),
-  senderId: int('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  receiverId: int('receiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+export const transferLogs = pgTable('transfer_logs', {
+  id: serial('id').primaryKey(),
+  senderId: integer('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  receiverId: integer('receiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  status: mysqlEnum('status', ['success', 'pending', 'failed']).notNull().default('success'),
+  status: transferStatusEnum('status').notNull().default('success'),
   message: varchar('message', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 },
 (table) => {
   return {
@@ -58,3 +61,8 @@ export const transferLogsRelations = relations(transferLogs, ({ one }) => ({
     relationName: 'receivedTransfers',
   }),
 }));
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type TransferLog = typeof transferLogs.$inferSelect;
+export type NewTransferLog = typeof transferLogs.$inferInsert;

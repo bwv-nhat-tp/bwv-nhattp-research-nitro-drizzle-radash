@@ -19,7 +19,6 @@ export const useLoadingStore = defineStore('loading', () => {
 
   const startLoading = () => {
     if (pendingPromises.value === 0) {
-      // Cancel any pending timeout from a previous session
       if (stopTimeout.value) {
         clearTimeout(stopTimeout.value);
         stopTimeout.value = null;
@@ -39,7 +38,6 @@ export const useLoadingStore = defineStore('loading', () => {
       const elapsed = Date.now() - loadingStartTime.value;
       const remainingTime = Math.max(0, minimumDisplayTime - elapsed);
 
-      // Clear any existing timeout to prevent multiple timeouts
       if (stopTimeout.value) {
         clearTimeout(stopTimeout.value);
       }

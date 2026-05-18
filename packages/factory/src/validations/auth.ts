@@ -3,7 +3,6 @@ import { userCoreFields } from './user';
 
 export const backendRegisterSchema = yup.object({
   email: yup.string().email('Invalid email format').required('Email is required'),
-  // reuse name validator that checks nationality-specific rules when nationality is provided
   name: userCoreFields.name,
   password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
   nationality: yup.string().optional(),

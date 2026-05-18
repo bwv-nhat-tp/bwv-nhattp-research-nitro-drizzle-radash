@@ -66,8 +66,4 @@ router.beforeEach((to, _from, next) => {
     next();
   }
 });
-
-// Note: Loading is now managed by individual components and App.vue
-// Router no longer controls loading to avoid interference with query-based loading
-
 export default router;

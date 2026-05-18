@@ -80,7 +80,6 @@
     const loadingStore = useLoadingStore();
     const isFirstLoad = ref(true);
 
-    // Watch for targetUserId changes to refetch logs when navigating between users
     watch(
       () => props.targetUserId,
       () => {
@@ -98,12 +97,10 @@
 
     const { timeRange, timeOptions, dateFilters } = useTimeFilter();
 
-    // Sync local loading with global loading store
     watch(() => loadingStore.shouldShowLoading, (newVal) => {
       loading.value = newVal;
     }, { immediate: true });
 
-    // Initialize search query from URL on mount
     onMounted(() => {
       const urlSearch = route.query.search as string;
       if (urlSearch) {
@@ -111,7 +108,6 @@
       }
     });
 
-    // Watch for route query changes
     watch(
       () => route.query.search,
       (newSearch) => {

@@ -7,3 +7,5 @@ export * from './validations/transfer';
 export * from './validations/user';
 export * from './validations/auth';
 export * from './types';
+export * as errors from './error';
+export { default as BWError } from './error/error';

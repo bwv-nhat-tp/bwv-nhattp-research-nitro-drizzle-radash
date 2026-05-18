@@ -1,9 +1,6 @@
 <template>
   <header class="app-header">
-    <div class="logo">
-      <i class="pi pi-users text-2xl"></i>
-      <h2>User Management Pro</h2>
-    </div>
+    <div class="header-spacer"></div>
 
     <div v-if="authStore.isAuthenticated" class="dashboard-stats">
       <div class="stat-box">
@@ -58,14 +55,8 @@
     padding: 1rem 2rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .logo h2 {
-    margin: 0;
-    font-size: 1.25rem;
+  .header-spacer {
+    flex: 1;
   }
   .dashboard-stats {
     display: flex;

@@ -1,6 +1,6 @@
-import { migrate } from 'drizzle-orm/mysql2/migrator';
-import { drizzle } from 'drizzle-orm/mysql2';
-import mysql from 'mysql2/promise';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
 import path, { dirname } from 'node:path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
@@ -12,7 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 async function runMigrate() {
   const connectionString = process.env.DATABASE_URL || '';
   
-  const connection = await mysql.createConnection(connectionString);
+  const connection = new pg.Pool({ connectionString });
   const db = drizzle(connection);
 
   await migrate(db, { migrationsFolder: path.resolve(__dirname, '../drizzle') });

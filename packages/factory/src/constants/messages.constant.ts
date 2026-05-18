@@ -11,6 +11,7 @@ export const SUCCESS_MESSAGES = {
 export const ERROR_MESSAGES = {
   INTERNAL_SERVER_ERROR: 'Internal server error',
   UNAUTHORIZED: 'Unauthorized',
+  FORBIDDEN: 'Forbidden',
   NOT_FOUND: 'Resource not found',
   BAD_REQUEST: 'Bad request',
   VALIDATION_ERROR: 'Validation failed',

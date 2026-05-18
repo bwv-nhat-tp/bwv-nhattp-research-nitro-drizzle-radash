@@ -1,10 +1,10 @@
 import { db } from '../db';
-import { transferLogs, users } from '../schema';
+import { NewTransferLog, TransferLog, transferLogs, users } from '../schema';
 import { eq, and, or, like, gte, lte, sql, desc } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/mysql-core';
+import { alias } from 'drizzle-orm/pg-core';
 import { sift } from 'radash';
 import { BaseRepository } from './base.repository';
-import { ERROR_MESSAGES } from '@intern/factory';
+import { ERROR_MESSAGES, errors } from '@intern/factory';
 
 interface LogFilters {
   page: number;
@@ -15,9 +15,9 @@ interface LogFilters {
   userId?: number;
 }
 
-class TransferLogRepositoryClass extends BaseRepository<typeof transferLogs> {
+class TransferLogRepositoryClass extends BaseRepository<typeof transferLogs, TransferLog, NewTransferLog> {
   constructor() {
-    super(transferLogs);
+    super(transferLogs, transferLogs.id);
   }
 
   async findLogs(filters: LogFilters) {
@@ -110,11 +110,11 @@ class TransferLogRepositoryClass extends BaseRepository<typeof transferLogs> {
       const [toUser] = await tx.select().from(users).where(eq(users.id, toUserId));
 
       if (!fromUser || !toUser) {
-        throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
+        throw new errors.NotFound(ERROR_MESSAGES.USER_NOT_FOUND);
       }
 
       if (Number(fromUser.balance) < amount) {
-        throw new Error(ERROR_MESSAGES.INSUFFICIENT_BALANCE);
+        throw new errors.Argument('amount', ERROR_MESSAGES.INSUFFICIENT_BALANCE);
       }
 
       await tx.update(users)

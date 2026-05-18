@@ -1,37 +1,41 @@
-import { H3Event, getHeader, createError } from 'h3';
-import { last } from 'radash';
+import { H3Event, getHeader } from 'h3';
+import { last, tryit } from 'radash';
 import jwt from 'jsonwebtoken';
 import { UserRepository } from '@intern/domain';
-import { ERROR_MESSAGES, HttpStatus } from '@intern/factory';
+import { ERROR_MESSAGES, errors } from '@intern/factory';
 
 export async function requireAuth(event: H3Event) {
   const authHeader = getHeader(event, 'authorization');
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw createError({ statusCode: HttpStatus.UNAUTHORIZED, statusMessage: ERROR_MESSAGES.UNAUTHORIZED });
+    throw new errors.Unauthorized();
+  }
+  
+  const token = last(authHeader.split(' '));
+  if (!token) {
+    throw new errors.Unauthorized();
   }
 
-  const parts = authHeader.split(' ');
-  const token = last(parts);
-  if (!token || typeof token !== 'string') {
-    throw createError({ statusCode: HttpStatus.UNAUTHORIZED, statusMessage: ERROR_MESSAGES.UNAUTHORIZED });
+  const secret = process.env.JWT_ACCESS_SECRET;
+  if (!secret) {
+    throw new errors.Error((ERROR_MESSAGES.INTERNAL_SERVER_ERROR));
   }
 
-  if (!process.env.JWT_ACCESS_SECRET) {
-    throw createError({ statusCode: HttpStatus.INTERNAL_SERVER_ERROR, statusMessage: ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+  const [jwtError, decoded] = tryit(() => jwt.verify(token, secret) as { id: number })();
+  
+  if (jwtError) {
+    throw new errors.Unauthorized();
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as unknown as { id: number };
-    const user = await UserRepository.findById(decoded.id);
-    
-    if (!user) {
-      throw createError({ statusCode: HttpStatus.UNAUTHORIZED, statusMessage: ERROR_MESSAGES.UNAUTHORIZED });
-    }
-    
-    event.context.user = user;
-    return user;
-  } catch (error) {
-    throw createError({ statusCode: HttpStatus.UNAUTHORIZED, statusMessage: ERROR_MESSAGES.UNAUTHORIZED });
+  const [dbError, user] = await tryit(() => UserRepository.findById(decoded.id))();
+  if (dbError) {
+    throw new errors.Error(ERROR_MESSAGES.INTERNAL_SERVER_ERROR);
   }
+  
+  if (!user) {
+    throw new errors.Unauthorized();
+  }
+  
+  event.context.user = user;
+  return user;
 }
