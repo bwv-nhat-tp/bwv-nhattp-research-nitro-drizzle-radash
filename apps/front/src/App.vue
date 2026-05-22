@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <MainLayout />
+    <router-view />
     <Toast />
     <LoadingOverlay />
   </div>
@@ -8,12 +8,10 @@
 
 <script setup lang="ts">
 import Toast from "primevue/toast";
-import { onMounted, provide, reactive } from "vue";
+import { provide, reactive } from "vue";
 
 import LoadingOverlay from "./components/common/LoadingOverlay.vue";
-import MainLayout from "./layouts/MainLayout.vue";
-import { useAuthStore } from "./stores/authStore";
-import { useLoadingStore } from "./stores/loadingStore";
+import { useApiClient } from "./composables";
 
 const appConfig = reactive({
   locale: "en-US",
@@ -21,16 +19,7 @@ const appConfig = reactive({
 });
 
 provide("appConfig", appConfig);
-
-const authStore = useAuthStore();
-const loadingStore = useLoadingStore();
-
-onMounted(() => {
-  loadingStore.startLoading();
-  authStore.fetchCurrentUser().finally(() => {
-    loadingStore.stopLoading();
-  });
-});
+useApiClient();
 </script>
 
 <style>

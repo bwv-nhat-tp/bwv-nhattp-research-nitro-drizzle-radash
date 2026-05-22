@@ -25,6 +25,11 @@ The app is available at `http://localhost:8080`.
 Services included:
 
 - `nginx`: serves the Vue frontend and proxies `/api/v1` to the API.
-- `api`: runs the Nitro server on port `8081` inside the compose network.
-- `migrate`: runs Drizzle migrations once after Postgres is healthy.
+- `api`: runs the Nitro server on port `8081`.
 - `postgres`: stores data in the `postgres-data` Docker volume.
+
+Run database migration separately when needed:
+
+```sh
+yarn db:migrate
+```

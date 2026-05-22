@@ -12,11 +12,7 @@
         <span class="stat-value">{{ formattedTotalBalance }}</span>
       </div>
 
-      <button
-        class="logout-btn"
-        :disabled="authStore.loading"
-        @click="handleLogout"
-      >
+      <button class="logout-btn" :disabled="isLoggingOut" @click="handleLogout">
         <i class="pi pi-sign-out"></i> Logout
       </button>
     </div>
@@ -24,13 +20,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from "vue";
+import { computed, inject, watch } from "vue";
+import { useRouter } from "vue-router";
 
+import { useMutation } from "../composables";
+import { authService } from "../services";
 import { useAuthStore } from "../stores/authStore";
+import { useLoadingStore } from "../stores/loadingStore";
 import { useUserStore } from "../stores/userStore";
 
 const userStore = useUserStore();
 const authStore = useAuthStore();
+const router = useRouter();
+const loadingStore = useLoadingStore();
+const { mutate: logout, isLoading: isLoggingOut } = useMutation(
+  authService.logout,
+);
 interface AppConfig {
   locale: string;
 }
@@ -45,8 +50,18 @@ const formattedTotalBalance = computed(() => {
   }).format(userStore.totalBalance);
 });
 
+watch(isLoggingOut, (value) => {
+  authStore.setLoading(value);
+  if (value) loadingStore.startLoading();
+  else loadingStore.stopLoading();
+});
+
 const handleLogout = async () => {
-  await authStore.logout();
+  if (authStore.token) {
+    await logout();
+  }
+  authStore.clearAuth();
+  router.push({ name: "Login" });
 };
 </script>
 

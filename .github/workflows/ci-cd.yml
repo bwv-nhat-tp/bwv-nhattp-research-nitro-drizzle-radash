@@ -97,6 +97,6 @@ jobs:
             rm -rf "$RELEASE_DIR"
 
             cd "$APP_DIR"
-            docker compose down
+            docker compose down api front
             docker compose up --build -d
             docker system prune -af

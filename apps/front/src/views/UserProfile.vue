@@ -90,11 +90,11 @@ import Button from "primevue/button";
 import { computed, inject, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import type { ApiErrorResponse } from "../api/types";
-import { userAPI } from "../api/userAPI";
 import TransferLogs from "../components/common/TransferLogs.vue";
 import TransferForm from "../components/TransferForm.vue";
+import { useLazyQuery, useMutation } from "../composables";
 import { useNotifications } from "../composables/useNotifications";
+import { type ApiErrorResponse, authService, userService } from "../services";
 import { useAuthStore } from "../stores/authStore";
 import { useLoadingStore } from "../stores/loadingStore";
 import { useUserStore } from "../stores/userStore";
@@ -110,6 +110,26 @@ const user = ref<UserFromApi | null>(null);
 const loading = ref(true);
 const uploadingAvatar = ref(false);
 const avatarInput = ref<HTMLInputElement | null>(null);
+const {
+  result: userResult,
+  refetch: refetchUser,
+  error: userError,
+} = useLazyQuery(userService.getUserById);
+const {
+  result: avatarResult,
+  mutate: uploadAvatar,
+  error: uploadAvatarError,
+} = useMutation(userService.uploadAvatar);
+const {
+  result: usersResult,
+  refetch: refetchUsers,
+  error: usersError,
+} = useLazyQuery(userService.getAllUsers);
+const {
+  result: meResult,
+  refetch: refetchMe,
+  error: meError,
+} = useLazyQuery(authService.getMe);
 
 const appConfig = inject<AppConfig>("appConfig");
 
@@ -139,19 +159,32 @@ const avatarUrl = computed(() => {
   return `${user.value.avatarUrl}${separator}v=${encodeURIComponent(user.value.updatedAt)}`;
 });
 
-const goBack = () => router.push("/");
+const goBack = () => router.push("/users");
 
 const fetchUserDetails = async () => {
   loading.value = true;
   loadingStore.startLoading();
-  try {
-    const { data } = await userAPI.getUserById(Number(route.params.id));
-    user.value = data;
-  } catch (error) {
-    console.error("Failed to fetch user details", error);
-  } finally {
-    loading.value = false;
-    loadingStore.stopLoading();
+  await refetchUser(Number(route.params.id));
+  if (!userError.value) {
+    user.value = userResult.data;
+  } else {
+    console.error("Failed to fetch user details", userError.value);
+  }
+  loading.value = false;
+  loadingStore.stopLoading();
+};
+
+const loadUsers = async () => {
+  await refetchUsers();
+  if (!usersError.value && usersResult.data) {
+    userStore.setUsers(usersResult.data);
+  }
+};
+
+const refreshCurrentUser = async () => {
+  await refetchMe();
+  if (!meError.value) {
+    authStore.setCurrentUser(meResult.data);
   }
 };
 
@@ -184,22 +217,23 @@ const handleAvatarSelect = async (event: Event) => {
 
   uploadingAvatar.value = true;
   loadingStore.startLoading();
-  try {
-    const { data } = await userAPI.uploadAvatar(user.value.id, file);
-    user.value = data;
-    await Promise.all([userStore.fetchUsers(), authStore.fetchCurrentUser()]);
+  await uploadAvatar(user.value.id, file);
+  if (!uploadAvatarError.value && avatarResult.value) {
+    user.value = avatarResult.value;
+    await Promise.all([loadUsers(), refreshCurrentUser()]);
     notifySuccess("Avatar uploaded");
-  } catch (error) {
-    const typedError = error as { response?: { data?: ApiErrorResponse } };
+  } else {
+    const typedError = uploadAvatarError.value as {
+      response?: { data?: ApiErrorResponse };
+    };
     notifyError(typedError?.response?.data?.message || "Upload avatar failed");
-  } finally {
-    uploadingAvatar.value = false;
-    loadingStore.stopLoading();
   }
+  uploadingAvatar.value = false;
+  loadingStore.stopLoading();
 };
 
 const handleTransferSuccess = async () => {
-  await Promise.all([userStore.fetchUsers(), fetchUserDetails()]);
+  await Promise.all([loadUsers(), fetchUserDetails()]);
   if (logsRef.value) {
     logsRef.value.fetchLogs();
   }
@@ -213,7 +247,7 @@ watch(
   isMyProfile,
   (canTransfer) => {
     if (canTransfer && userStore.users.length === 0 && !userStore.loading) {
-      userStore.fetchUsers();
+      loadUsers();
     }
   },
   { immediate: true },

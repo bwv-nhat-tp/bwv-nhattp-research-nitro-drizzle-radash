@@ -5,7 +5,7 @@
     </div>
 
     <nav class="sidebar-nav">
-      <router-link to="/" class="nav-item" active-class="active">
+      <router-link to="/users" class="nav-item" active-class="active">
         <i class="pi pi-home"></i>
         <span class="nav-label">Dashboard</span>
       </router-link>

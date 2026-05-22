@@ -50,18 +50,27 @@ import Dropdown from "primevue/dropdown";
 import InputNumber from "primevue/inputnumber";
 import { select } from "radash";
 import { useForm } from "vee-validate";
-import { computed, ref } from "vue";
+import { computed, watch } from "vue";
 
-import { transferAPI } from "../api/transferAPI";
-import type { ApiErrorResponse } from "../api/types";
+import { useMutation } from "../composables";
 import { useNotifications } from "../composables/useNotifications";
+import { type ApiErrorResponse, transferService } from "../services";
 import { useLoadingStore } from "../stores/loadingStore";
 
 const props = defineProps<{ users: UserFromApi[]; currentUserId: number }>();
 const emit = defineEmits(["success"]);
 const { notifySuccess, notifyError } = useNotifications();
-const loading = ref(false);
 const loadingStore = useLoadingStore();
+const {
+  mutate: transferBalance,
+  isLoading: loading,
+  error: transferError,
+} = useMutation(transferService.transferBalance);
+
+watch(loading, (value) => {
+  if (value) loadingStore.startLoading();
+  else loadingStore.stopLoading();
+});
 
 const userOptions = computed(() =>
   select(
@@ -84,19 +93,16 @@ const [toUserId] = defineField("toUserId");
 const [amount] = defineField("amount");
 
 const onTransfer = handleSubmit(async (values) => {
-  loadingStore.startLoading();
-  loading.value = true;
-  try {
-    const { data } = await transferAPI.transferBalance(values);
+  const data = await transferBalance(values);
+  if (!transferError.value && data) {
     notifySuccess(data.message);
     resetForm();
     emit("success");
-  } catch (error) {
-    const typedError = error as { response?: { data?: ApiErrorResponse } };
+  } else {
+    const typedError = transferError.value as {
+      response?: { data?: ApiErrorResponse };
+    };
     notifyError(typedError?.response?.data?.message || "Transfer error");
-  } finally {
-    loading.value = false;
-    loadingStore.stopLoading();
   }
 });
 </script>

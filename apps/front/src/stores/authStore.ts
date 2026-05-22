@@ -1,20 +1,9 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 
-import {
-  authAPI,
-  type AuthData,
-  type LoginDto,
-  type RegisterDto,
-} from "../api/authAPI";
-import type { ApiErrorResponse } from "../api/types";
-import { useLoadingStore } from "./loadingStore";
+import type { AuthData } from "../services";
 
 export const useAuthStore = defineStore("auth", () => {
-  const router = useRouter();
-  const loadingStore = useLoadingStore();
-
   const currentUser = ref<AuthData["user"] | null>(null);
   const token = ref<string | null>(localStorage.getItem("accessToken") || null);
   const loading = ref(false);
@@ -28,87 +17,28 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.setItem("accessToken", authData.accessToken);
   };
 
+  const setCurrentUser = (user: AuthData["user"] | null) => {
+    currentUser.value = user;
+  };
+
   const clearAuth = () => {
     currentUser.value = null;
     token.value = null;
     localStorage.removeItem("accessToken");
   };
 
-  const login = async (credentials: LoginDto) => {
-    loadingStore.startLoading();
-    loading.value = true;
-    error.value = null;
-    try {
-      const { data } = await authAPI.login(credentials);
-
-      if (data.accessToken) {
-        setAuth(data);
-        return true;
-      }
-      error.value = "Login failed";
-      return false;
-    } catch (err) {
-      const typedErr = err as { response?: { data?: ApiErrorResponse } };
-      error.value =
-        typedErr?.response?.data?.message || "Server connection error";
-      return false;
-    } finally {
-      loading.value = false;
-      loadingStore.stopLoading();
-    }
+  const setLoading = (value: boolean) => {
+    loading.value = value;
   };
 
-  const register = async (userInfo: RegisterDto) => {
-    loadingStore.startLoading();
-    loading.value = true;
-    error.value = null;
-    try {
-      await authAPI.register(userInfo);
-      return true;
-    } catch (err) {
-      const typedErr = err as { response?: { data?: ApiErrorResponse } };
-      error.value =
-        typedErr?.response?.data?.message || "Server connection error";
-      return false;
-    } finally {
-      loading.value = false;
-      loadingStore.stopLoading();
-    }
+  const setError = (value: string | null) => {
+    error.value = value;
   };
 
-  const logout = async () => {
-    loadingStore.startLoading();
-    loading.value = true;
-    try {
-      if (token.value) {
-        await authAPI.logout();
-      }
-    } catch (err) {
-      console.error("Logout error", err);
-    } finally {
-      clearAuth();
-      loading.value = false;
-      loadingStore.stopLoading();
-      router.push({ name: "Login" });
-    }
-  };
-
-  const fetchCurrentUser = async () => {
-    if (!token.value) return false;
-
-    loadingStore.startLoading();
-    loading.value = true;
-    try {
-      const { data } = await authAPI.getMe();
-      currentUser.value = data;
-      return true;
-    } catch (_err) {
-      clearAuth();
-      return false;
-    } finally {
-      loading.value = false;
-      loadingStore.stopLoading();
-    }
+  const setToken = (value: string | null) => {
+    token.value = value;
+    if (value) localStorage.setItem("accessToken", value);
+    else localStorage.removeItem("accessToken");
   };
 
   return {
@@ -117,10 +47,11 @@ export const useAuthStore = defineStore("auth", () => {
     loading,
     error,
     isAuthenticated,
-    login,
-    register,
-    logout,
     clearAuth,
-    fetchCurrentUser,
+    setAuth,
+    setCurrentUser,
+    setError,
+    setLoading,
+    setToken,
   };
 });

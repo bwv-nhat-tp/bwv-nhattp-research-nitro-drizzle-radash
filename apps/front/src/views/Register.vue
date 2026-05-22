@@ -3,8 +3,8 @@
     :title="APP_ROUTES.FRONTEND.REGISTER"
     icon="pi pi-user-plus"
     :submit-label="APP_ROUTES.FRONTEND.REGISTER"
-    :loading="authStore.loading"
-    :error="authStore.error"
+    :loading="isRegistering"
+    :error="registerErrorMessage"
     footer-text="Already have an account?"
     footer-link-text="Sign in now"
     footer-route="/login"
@@ -107,13 +107,34 @@ import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 import Password from "primevue/password";
 import { useForm } from "vee-validate";
+import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import AuthLayout from "../components/AuthLayout.vue";
-import { useAuthStore } from "../stores/authStore";
+import { useMutation } from "../composables";
+import { type ApiErrorResponse, authService } from "../services";
+import { useLoadingStore } from "../stores/loadingStore";
 
 const router = useRouter();
-const authStore = useAuthStore();
+const loadingStore = useLoadingStore();
+const {
+  mutate: register,
+  isLoading: isRegistering,
+  error: registerError,
+} = useMutation(authService.register);
+
+const registerErrorMessage = computed(() => {
+  const typedError = registerError.value as {
+    response?: { data?: ApiErrorResponse };
+  } | null;
+
+  return typedError?.response?.data?.message || null;
+});
+
+watch(isRegistering, (value) => {
+  if (value) loadingStore.startLoading();
+  else loadingStore.stopLoading();
+});
 
 const { handleSubmit, errors, defineField } = useForm<RegisterDto>({
   validationSchema: registerSchema,
@@ -134,7 +155,7 @@ const [password] = defineField("password");
 const [confirmPassword] = defineField("confirmPassword");
 
 const onSubmit = handleSubmit(async (values) => {
-  const success = await authStore.register(values);
-  if (success) router.push({ name: APP_ROUTES.FRONTEND.LOGIN });
+  await register(values);
+  if (!registerError.value) router.push({ name: APP_ROUTES.FRONTEND.LOGIN });
 });
 </script>

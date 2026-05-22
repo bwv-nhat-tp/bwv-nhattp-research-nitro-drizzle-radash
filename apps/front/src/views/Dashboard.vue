@@ -46,19 +46,21 @@
 import type { UserFromApi } from "@intern/factory";
 import { Nationality, SUCCESS_MESSAGES } from "@intern/factory";
 import Button from "primevue/button";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
-import type { ApiErrorResponse } from "../api/types";
-import { userAPI } from "../api/userAPI";
 import UserTable from "../components/common/UserTable.vue";
 import UserDialog from "../components/UserDialog.vue";
+import { useLazyQuery, useMutation } from "../composables";
 import { useNotifications } from "../composables/useNotifications";
+import { type ApiErrorResponse, userService } from "../services";
+import { useLoadingStore } from "../stores/loadingStore";
 import { useUserStore } from "../stores/userStore";
 
 const { notifySuccess, notifyError } = useNotifications();
 const router = useRouter();
 const userStore = useUserStore();
+const loadingStore = useLoadingStore();
 
 const showDialog = ref(false);
 const isEditMode = ref(false);
@@ -75,6 +77,30 @@ const selectedUser = ref<{
   nationality: Nationality.US,
 });
 const isSaving = ref(false);
+const { mutate: updateUser, error: updateUserError } = useMutation(
+  userService.updateUser,
+);
+const {
+  result: usersResult,
+  refetch: refetchUsers,
+  error: usersError,
+  isLoading: isFetchingUsers,
+} = useLazyQuery(userService.getAllUsers);
+const {
+  mutate: deleteUser,
+  error: deleteUserError,
+  isLoading: isDeletingUser,
+} = useMutation(userService.deleteUser);
+
+let listLoading = false;
+watch([isFetchingUsers, isDeletingUser], ([fetching, deleting]) => {
+  const value = fetching || deleting;
+  if (value === listLoading) return;
+  listLoading = value;
+  userStore.setLoading(value);
+  if (value) loadingStore.startLoading();
+  else loadingStore.stopLoading();
+});
 
 const refreshCooldown = ref(0);
 const cooldownTimer = ref<ReturnType<typeof setInterval> | null>(null);
@@ -110,8 +136,20 @@ const handleRefresh = async () => {
     cooldownTimer.value = null;
   }
 
-  await userStore.fetchUsers();
+  await loadUsers();
   startCooldown();
+};
+
+const loadUsers = async () => {
+  await refetchUsers();
+  if (!usersError.value && usersResult.data) {
+    userStore.setUsers(usersResult.data);
+  } else if (usersError.value) {
+    const typedError = usersError.value as {
+      response?: { data?: ApiErrorResponse };
+    };
+    notifyError(typedError?.response?.data?.message || "Load error");
+  }
 };
 
 const openEditDialog = (user: UserFromApi) => {
@@ -122,9 +160,13 @@ const openEditDialog = (user: UserFromApi) => {
 
 const handleDeleteUser = async (id: number) => {
   if (!confirm("Do you want to delete this user?")) return;
-  const success = await userStore.deleteUser(id);
-  if (success) notifySuccess(SUCCESS_MESSAGES.USER_DELETE);
-  else notifyError("Delete failed");
+  await deleteUser(id);
+  if (!deleteUserError.value) {
+    userStore.removeUser(id);
+    notifySuccess(SUCCESS_MESSAGES.USER_DELETE);
+  } else {
+    notifyError("Delete failed");
+  }
 };
 
 const handleSaveUser = async (formData: {
@@ -135,21 +177,22 @@ const handleSaveUser = async (formData: {
   nationality: Nationality;
 }) => {
   isSaving.value = true;
-  try {
-    const { data } = await userAPI.updateUser(formData.id, formData);
+  const data = await updateUser(formData.id, formData);
+  if (!updateUserError.value && data) {
     notifySuccess(data.message || SUCCESS_MESSAGES.USER_UPDATE);
-    await userStore.fetchUsers();
+    await loadUsers();
     showDialog.value = false;
-  } catch (error) {
-    const typedError = error as { response?: { data?: ApiErrorResponse } };
+  } else {
+    const typedError = updateUserError.value as {
+      response?: { data?: ApiErrorResponse };
+    };
     notifyError(typedError?.response?.data?.message || "Save error");
-  } finally {
-    isSaving.value = false;
   }
+  isSaving.value = false;
 };
 
 onMounted(() => {
-  userStore.fetchUsers();
+  loadUsers();
 });
 
 onUnmounted(() => {

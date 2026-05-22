@@ -3,8 +3,8 @@
     :title="APP_ROUTES.FRONTEND.LOGIN"
     icon="pi pi-user"
     :submit-label="APP_ROUTES.FRONTEND.LOGIN"
-    :loading="authStore.loading"
-    :error="authStore.error"
+    :loading="isLoggingIn"
+    :error="loginErrorMessage"
     footer-text="Don't have an account?"
     footer-link-text="Sign up now"
     footer-route="/register"
@@ -42,21 +42,48 @@
 import { APP_ROUTES } from "@intern/factory";
 import InputText from "primevue/inputtext";
 import Password from "primevue/password";
-import { reactive } from "vue";
+import { computed, reactive, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import AuthLayout from "../components/AuthLayout.vue";
+import { useMutation } from "../composables";
+import { type ApiErrorResponse, authService } from "../services";
 import { useAuthStore } from "../stores/authStore";
+import { useLoadingStore } from "../stores/loadingStore";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const loadingStore = useLoadingStore();
 const form = reactive({ email: "", password: "" });
+const {
+  result: loginResult,
+  mutate: login,
+  isLoading: isLoggingIn,
+  error: loginError,
+} = useMutation(authService.login);
+
+const loginErrorMessage = computed(() => {
+  const typedError = loginError.value as {
+    response?: { data?: ApiErrorResponse };
+  } | null;
+
+  return typedError?.response?.data?.message || null;
+});
+
+watch(isLoggingIn, (value) => {
+  authStore.setLoading(value);
+  if (value) loadingStore.startLoading();
+  else loadingStore.stopLoading();
+});
 
 const handleLogin = async () => {
-  const success = await authStore.login({
+  await login({
     email: form.email,
     password: form.password,
   });
-  if (success) router.push({ name: APP_ROUTES.FRONTEND.DASHBOARD });
+  if (!loginError.value && loginResult.value) {
+    authStore.setAuth(loginResult.value);
+    router.push({ name: APP_ROUTES.FRONTEND.DASHBOARD });
+  }
 };
 </script>

@@ -71,8 +71,9 @@ import Dropdown from "primevue/dropdown";
 import { inject, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import { transferAPI } from "../../api/transferAPI";
+import { useLazyQuery } from "../../composables";
 import { useTimeFilter } from "../../composables/useTimeFilter";
+import { transferService } from "../../services";
 import { useLoadingStore } from "../../stores/loadingStore";
 import {
   formatCurrency,
@@ -105,6 +106,16 @@ const loading = ref(false);
 const page = ref(1);
 const limit = ref(5);
 const totalRecords = ref(0);
+const {
+  result: allLogsResult,
+  refetch: refetchAllLogs,
+  error: allLogsError,
+} = useLazyQuery(transferService.getAllLogs);
+const {
+  result: userLogsResult,
+  refetch: refetchUserLogs,
+  error: userLogsError,
+} = useLazyQuery(transferService.getUserLogs);
 
 const { timeRange, timeOptions, dateFilters } = useTimeFilter();
 
@@ -142,24 +153,30 @@ const fetchLogs = async () => {
   loading.value = true;
   try {
     const { startDate, endDate } = dateFilters.value;
-    const response = props.targetUserId
-      ? await transferAPI.getUserLogs(
-          props.targetUserId,
-          page.value,
-          limit.value,
-          searchQuery.value,
-          startDate,
-          endDate,
-        )
-      : await transferAPI.getAllLogs(
-          page.value,
-          limit.value,
-          searchQuery.value,
-          startDate,
-          endDate,
-        );
-    logs.value = response.data.data;
-    totalRecords.value = response.data.total;
+    if (props.targetUserId) {
+      await refetchUserLogs(
+        props.targetUserId,
+        page.value,
+        limit.value,
+        searchQuery.value,
+        startDate,
+        endDate,
+      );
+      if (userLogsError.value) throw userLogsError.value;
+      logs.value = userLogsResult.data?.data ?? [];
+      totalRecords.value = userLogsResult.data?.total ?? 0;
+    } else {
+      await refetchAllLogs(
+        page.value,
+        limit.value,
+        searchQuery.value,
+        startDate,
+        endDate,
+      );
+      if (allLogsError.value) throw allLogsError.value;
+      logs.value = allLogsResult.data?.data ?? [];
+      totalRecords.value = allLogsResult.data?.total ?? 0;
+    }
   } catch (error) {
     console.error("Error fetching logs:", error);
   } finally {
